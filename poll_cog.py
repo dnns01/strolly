@@ -1,9 +1,5 @@
-import os
-
 import discord
 from discord.ext import commands
-
-import utils
 
 OPTIONS = ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮", "🇯", "🇰", "🇱", "🇲", "🇳", "🇴", "🇵", "🇶", "🇷"]
 
@@ -11,30 +7,6 @@ OPTIONS = ["🇦", "🇧", "🇨", "🇩", "🇪", "🇫", "🇬", "🇭", "🇮
 class PollCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.poll_sugg_channel = int(os.getenv("DISCORD_POLL_SUGG_CHANNEL"))
-
-    @commands.command(name="add-poll")
-    async def cmd_add_poll(self, ctx, question, *answers):
-        channel = await self.bot.fetch_channel(self.poll_sugg_channel)
-        msg = f"<@!{ctx.author.id}> hat folgende Umfrage vorgeschlagen:\nFrage:{question}\n\nAntwortoptionen:\n"
-
-        for answer in answers:
-            msg += f"{answer}\n"
-
-        await channel.send(msg)
-
-    @commands.command(name="edit-poll")
-    @commands.check(utils.is_mod)
-    async def cmd_edit_poll(self, ctx, message_id, question, *answers):
-        message = await ctx.fetch_message(message_id)
-        if message:
-            if message.embeds[0].title == "Umfrage":
-                old_poll = Poll(self.bot, message=message)
-                new_poll = Poll(self.bot, question=question, answers=answers, author=old_poll.author)
-                await new_poll.send_poll(ctx.channel, message=message)
-        else:
-            ctx.send("Fehler! Umfrage nicht gefunden!")
-        pass
 
     @commands.command(name="poll")
     async def cmd_poll(self, ctx, question, *answers):
@@ -123,15 +95,9 @@ class Poll:
         else:
             message = await channel.send("", embed=embed)
 
-        await message.clear_reaction("🗑️")
-        await message.clear_reaction("🛑")
-
         if not result:
             for i in range(0, len(self.answers)):
                 await message.add_reaction(OPTIONS[i])
-
-            for i in range(len(self.answers), len(OPTIONS)):
-                await message.clear_reaction(OPTIONS[i])
 
             await message.add_reaction("🗑️")
             await message.add_reaction("🛑")
