@@ -22,20 +22,20 @@ class Leaderboard(commands.Cog):
     async def cmd_highscore(self, ctx, score: int):
         """ Add highscore for Dorfromantik leaderboard """
 
-        if highscore := self.highscores.get(str(ctx.author.id)):
-            self.highscores[str(ctx.author.id)] = max(highscore, score)
-        else:
-            self.highscores[str(ctx.author.id)] = score
-        self.save()
+        if score > 50:
+            if highscore := self.highscores.get(str(ctx.author.id)):
+                self.highscores[str(ctx.author.id)] = max(highscore, score)
+            else:
+                self.highscores[str(ctx.author.id)] = score
+            self.save()
 
-        await ctx.send(f"Vielen Dank für deine Einreichung. Du bist damit auf Platz {self.get_place(ctx.author.id)} der Rangliste gelandet.")
-
-
+            await ctx.send(
+                f"Vielen Dank für deine Einreichung. Du bist damit auf Platz {self.get_place(ctx.author.id)} der Rangliste gelandet.")
 
     @commands.command(name="romantikboard")
-    async def cmd_romantikboard(self, ctx):
+    async def cmd_romantikboard(self, ctx, all=None):
         place = 0
-        max = 10
+        max = 0 if all == "all" else 1
         ready = False
         message = "```fix\nDorfromantik Leaderboard\n\n"
         message += " {:^3} | {:^37} | {:^9}\n".format("#", "Name", "Punkte")
@@ -45,7 +45,7 @@ class Leaderboard(commands.Cog):
                 member = await ctx.guild.fetch_member(key)
                 place += 1
 
-                if place > max:
+                if 0 < max < place:
                     if ready:
                         break
                     elif str(ctx.author.id) != key:
