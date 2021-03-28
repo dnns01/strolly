@@ -1,5 +1,6 @@
 import json
 
+import discord
 from discord.ext import commands
 
 
@@ -34,12 +35,18 @@ class Leaderboard(commands.Cog):
 
     @commands.command(name="romantikboard", aliases=["dorfpranger"])
     async def cmd_romantikboard(self, ctx, all=None):
+
+        embed = discord.Embed(title="Dorfromantik Leaderboard",
+                              description="Offizielles inoffizielles Leaderborad des kultigen Karten-Lege-Spiels Dorfromantik der geilsten Powercommunity! Highscores, die HIER nicht eingetragen sind, zählen nicht!")
+        embed.set_thumbnail(url="https://img.itch.zone/aW1nLzQ2ODEyMTUuanBn/original/SVutRj.jpg")
+
+        places = scores = ""
         place = 0
         max = 0 if all == "all" else 10
         ready = False
-        message = "```fix\nDorfromantik Leaderboard\n\n"
-        message += " {:^3} | {:^37} | {:^9}\n".format("#", "Name", "Punkte")
-        message += "-----|---------------------------------------|-----------\n"
+        # message = "```fix\nDorfromantik Leaderboard\n\n"
+        # message += " {:^3} | {:^37} | {:^9}\n".format("#", "Name", "Punkte")
+        # message += "-----|---------------------------------------|-----------\n"
         for key, value in sorted(self.highscores.items(), key=lambda item: item[1], reverse=True):
             try:
                 member = await ctx.guild.fetch_member(key)
@@ -50,15 +57,22 @@ class Leaderboard(commands.Cog):
                         break
                     elif str(ctx.author.id) != key:
                         continue
-                message += "{:>4} | {:<37} | {:>9}\n".format(str(place),
-                                                             f"{member.display_name}#{member.discriminator}", value)
+                # message += "{:>4} | {:<37} | {:>9}\n".format(str(place),
+                #                                              f"{member.display_name}#{member.discriminator}", value)
+                places += f"{place}: <@!{ctx.author.id}>\n"
+                scores += f"{value}\n"
+
                 if str(ctx.author.id) == key:
                     ready = True
             except:
                 pass
 
-        message += "```"
-        await ctx.send(message)
+        # message += "```"
+
+        embed.add_field(name=f"Romantiker", value=places)
+        embed.add_field(name=f"Punkte", value=scores)
+        await ctx.send("", embed=embed)
+        # await ctx.send(message)
 
     def get_place(self, id):
         place = 0
