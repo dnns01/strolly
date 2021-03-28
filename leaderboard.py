@@ -59,7 +59,7 @@ class Leaderboard(commands.Cog):
                         continue
                 # message += "{:>4} | {:<37} | {:>9}\n".format(str(place),
                 #                                              f"{member.display_name}#{member.discriminator}", value)
-                places += f"{place}: <@!{ctx.author.id}>\n"
+                places += f"{place}: <@!{key}>\n"
                 scores += f"{value}\n"
 
                 if str(ctx.author.id) == key:
