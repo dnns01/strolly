@@ -35,7 +35,7 @@ class Leaderboard(commands.Cog):
     @commands.command(name="romantikboard", aliases=["dorfpranger"])
     async def cmd_romantikboard(self, ctx, all=None):
         place = 0
-        max = 0 if all == "all" else 1
+        max = 0 if all == "all" else 10
         ready = False
         message = "```fix\nDorfromantik Leaderboard\n\n"
         message += " {:^3} | {:^37} | {:^9}\n".format("#", "Name", "Punkte")
