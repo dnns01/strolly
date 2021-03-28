@@ -60,7 +60,7 @@ class Leaderboard(commands.Cog):
                 # message += "{:>4} | {:<37} | {:>9}\n".format(str(place),
                 #                                              f"{member.display_name}#{member.discriminator}", value)
                 places += f"{place}: <@!{key}>\n"
-                scores += f"{value}\n"
+                scores += f"{value:,}\n".replace(",", ".")
 
                 if str(ctx.author.id) == key:
                     ready = True
