@@ -32,7 +32,7 @@ class Leaderboard(commands.Cog):
             await ctx.send(
                 f"Vielen Dank für deine Einreichung. Du bist damit auf Platz {self.get_place(ctx.author.id)} der Rangliste gelandet.")
 
-    @commands.command(name="romantikboard")
+    @commands.command(name="romantikboard", aliases=["dorfpranger"])
     async def cmd_romantikboard(self, ctx, all=None):
         place = 0
         max = 0 if all == "all" else 1
