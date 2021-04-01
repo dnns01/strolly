@@ -44,12 +44,8 @@ class Leaderboard(commands.Cog):
         place = 0
         max = 0 if all == "all" else 10
         ready = False
-        # message = "```fix\nDorfromantik Leaderboard\n\n"
-        # message += " {:^3} | {:^37} | {:^9}\n".format("#", "Name", "Punkte")
-        # message += "-----|---------------------------------------|-----------\n"
         for key, value in sorted(self.highscores.items(), key=lambda item: item[1], reverse=True):
             try:
-                member = await ctx.guild.fetch_member(key)
                 place += 1
 
                 if 0 < max < place:
@@ -57,8 +53,6 @@ class Leaderboard(commands.Cog):
                         break
                     elif str(ctx.author.id) != key:
                         continue
-                # message += "{:>4} | {:<37} | {:>9}\n".format(str(place),
-                #                                              f"{member.display_name}#{member.discriminator}", value)
                 places += f"{place}: <@!{key}>\n"
                 scores += f"{value:,}\n".replace(",", ".")
 
@@ -67,12 +61,9 @@ class Leaderboard(commands.Cog):
             except:
                 pass
 
-        # message += "```"
-
         embed.add_field(name=f"Romantiker", value=places)
         embed.add_field(name=f"Punkte", value=scores)
         await ctx.send("", embed=embed)
-        # await ctx.send(message)
 
     def get_place(self, id):
         place = 0
