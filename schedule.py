@@ -54,12 +54,16 @@ class Schedule(commands.Cog):
 
     async def announce_segment(self, segment, new=True):
         channel = await self.bot.fetch_channel(int(os.getenv("DURCHSAGEN_CHANNEL")))
-        url = segment['categories'][0]['boxArtURL'].replace('-{width}x{height}', '').replace("/./", "/")
         start_at = datetime.fromisoformat(f"{segment['startAt'][:-1]}+00:00").astimezone().strftime("%d.%m.%Y %H:%M")
         title = "<:ja:836282702248411217> <:aa:836282738709233675> <:aa:836282738709233675> <:aa:836282738709233675> <:aa:836282738709233675>" if new else "Achtung Leute aufgepasst!!!"
         description = "Wie geil ist es? Ein neuer Stream ist in den Kalender geglitten\n" if new else "Es gibt eine kleine Änderung im Programmablauf!\n"
+        game = "Lass dich einfach überraschen!"
+        url = "https://static-cdn.jtvnw.net/ttv-static/404_boxart-144x192.jpg"
+        if categories := segment.get("categories"):
+            game = categories[0]['displayName']
+            url = categories[0]['boxArtURL'].replace('-{width}x{height}', '').replace("/./", "/")
         embed = discord.Embed(title=title, description=description)
         embed.set_thumbnail(url=url)
-        embed.add_field(name=segment["title"], value=segment['categories'][0]['displayName'])
+        embed.add_field(name=segment["title"], value=game)
         embed.add_field(name="Wann?", value=start_at)
         await channel.send(embed=embed)
