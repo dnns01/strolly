@@ -11,13 +11,13 @@ class Leaderboard(commands.Cog):
 
     def load(self):
         """ Load highscores from json file """
-        highscore_file = open("highscores.json", mode="r")
-        return json.load(highscore_file)
+        with open("highscores.json", mode="r") as highscore_file:
+            return json.load(highscore_file)
 
     def save(self):
         """ Save highscores to json file """
-        highscore_file = open("highscores.json", mode="w")
-        json.dump(self.highscores, highscore_file)
+        with open("highscores.json", mode="w") as highscore_file:
+            json.dump(self.highscores, highscore_file)
 
     @commands.command(name="highscore")
     async def cmd_highscore(self, ctx, score: int):
