@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import os
@@ -38,7 +39,8 @@ def remove_cancelled_streams(user, segments):
 
 
 @app_commands.guild_only
-@app_commands.default_permissions(manage_server=True)
+@app_commands.default_permissions(manage_guild=True)
+@app_commands.checks.has_permissions(manage_guild=True)
 class TwitchSchedule(commands.GroupCog, name="schedule"):
     def __init__(self, bot):
         self.bot = bot
@@ -50,6 +52,8 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
     @app_commands.describe(twitch_channel="Twitch channel to add",
                            emoji="Emoji to be used for this channels entries in schedule",
                            update_schedule="Define whether schedule should be updated or not.")
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def cmd_add(self, interaction: Interaction, twitch_channel: str, emoji: str, update_schedule: bool = False):
         await interaction.response.defer(ephemeral=True)
         user = await self.twitch_client.fetch_users(names=[twitch_channel])
@@ -72,6 +76,8 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
     @app_commands.command(name="remove", description="Remove Twitch Channel from Schedule")
     @app_commands.describe(twitch_channel="Twitch Channel to remove",
                            update_schedule="Define whether Schedule should be updated or not.")
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def cmd_remove(self, interaction: Interaction, twitch_channel: str, update_schedule: bool = False):
         await interaction.response.defer(ephemeral=True)
         user = await self.twitch_client.fetch_users(names=[twitch_channel])
@@ -92,6 +98,8 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
             content=f"Twitch Kanal ist kein Teil des Kalenders.")
 
     @app_commands.command(name="update", description="Force to update the schedule")
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.checks.has_permissions(manage_guild=True)
     async def cmd_update(self, interaction: Interaction):
         await interaction.response.defer(ephemeral=True)
         await self.update_schedule()
@@ -100,6 +108,13 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
     @tasks.loop(hours=1)
     async def update_task(self):
         await self.update_schedule()
+
+    @update_task.before_loop
+    async def before_update_task(self):
+        await self.bot.wait_until_ready()
+        now = datetime.now()
+        diff = (datetime(year=now.year, month=now.month, day=now.day, hour=now.hour) + timedelta(hours=1)) - now
+        await asyncio.sleep(diff.seconds)
 
     async def update_schedule(self):
         await self.update_database()
