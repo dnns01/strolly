@@ -122,6 +122,7 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
         end_day = start_day + timedelta(days=6)
 
         schedule_channel = await self.bot.fetch_channel(int(os.getenv("SCHEDULE_CHANNEL")))
+        await self.cleanup_forecast(schedule_channel)
 
         week_schedule = Schedule.get_or_none(calendar_week=calendar_week, calendar_year=start_day.year)
         embed = discord.Embed(title=f"Contentvorhersage für die {calendar_week}. Kalenderwoche",
@@ -133,6 +134,10 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
         while curr_day <= end_day:
             name = f"{get_weekday(curr_day)} {curr_day.strftime('%d.%m.%Y')}"
             value = ""
+
+            if curr_day.day == datetime.now().day:
+                name = f">> {name} <<"
+
             for segment in ScheduleSegment.select() \
                     .where(ScheduleSegment.start_time.between(curr_day, (curr_day + timedelta(days=1)))) \
                     .order_by(ScheduleSegment.start_time):
@@ -174,6 +179,18 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
                                            title=segment.title, channel=user.id, schedule=week_schedule[0].id)
 
             remove_cancelled_streams(user, schedule.segments)
+
+    async def cleanup_forecast(self, schedule_channel):
+        now = datetime.now()
+        calendar = now.isocalendar()
+
+        for schedule in Schedule.select().where(Schedule.calendar_week <= calendar.week - 1):
+            try:
+                message = await schedule_channel.fetch_message(schedule.message_id)
+                await message.delete()
+            except:
+                pass
+            schedule.delete_instance(recursive=True)
 
 
 async def setup(bot: commands.Bot) -> None:
