@@ -144,6 +144,7 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
                 value += f"{segment.channel.emoji} {segment.timeframe()}\n{segment.title}\n\n"
 
             if len(value) > 0:
+                value = f"{value[:-1]}\u200b"
                 embed.add_field(name=name, value=value, inline=False)
             curr_day += timedelta(days=1)
 
