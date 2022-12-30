@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands, tasks
-from twitchio import Client
+from twitchio import Client, errors
 
 from models import ScheduleSegment, TwitchChannel, Schedule
 
@@ -36,6 +36,27 @@ def remove_cancelled_streams(user, segments):
             ScheduleSegment.start_time > datetime.now()):
         if schedule_segment.id not in segments_dict:
             schedule_segment.delete_instance()
+
+
+async def get_schedule(user):
+    try:
+        schedule = await user.fetch_schedule()
+        return schedule
+    except errors.HTTPException:
+        return None
+
+
+async def cleanup_forecast(schedule_channel):
+    now = datetime.now()
+    calendar = now.isocalendar()
+
+    for schedule in Schedule.select().where(Schedule.calendar_week <= calendar.week - 1):
+        try:
+            message = await schedule_channel.fetch_message(schedule.message_id)
+            await message.delete()
+        except:
+            pass
+        schedule.delete_instance(recursive=True)
 
 
 @app_commands.guild_only
@@ -122,7 +143,7 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
         end_day = start_day + timedelta(days=6)
 
         schedule_channel = await self.bot.fetch_channel(int(os.getenv("SCHEDULE_CHANNEL")))
-        await self.cleanup_forecast(schedule_channel)
+        await cleanup_forecast(schedule_channel)
 
         week_schedule = Schedule.get_or_none(calendar_week=calendar_week, calendar_year=start_day.year)
         embed = discord.Embed(title=f"Contentvorhersage für die {calendar_week}. Kalenderwoche",
@@ -162,36 +183,25 @@ class TwitchSchedule(commands.GroupCog, name="schedule"):
     async def update_database(self):
         twitch_channels = [twitch_channel.user_id for twitch_channel in TwitchChannel.select()]
         for user in await self.twitch_client.fetch_users(ids=twitch_channels):
-            schedule = await user.fetch_schedule()
-            for segment in schedule.segments:
-                segment_id = json.loads(base64.b64decode(segment.id))
-                calendar_year = segment_id["isoYear"]
-                calendar_week = segment_id["isoWeek"]
-                week_schedule = Schedule.get_or_create(calendar_week=calendar_week, calendar_year=calendar_year)
-                if segment.start_time < datetime.now().astimezone():
-                    continue
-                if schedule_segment := ScheduleSegment.get_or_none(
-                        ScheduleSegment.id == segment.id):
-                    schedule_segment.update(start_time=segment.start_time, end_time=segment.end_time,
-                                            title=segment.title, schedule=week_schedule[0].id) \
-                        .where(ScheduleSegment.id == segment.id).execute()
-                else:
-                    ScheduleSegment.create(id=segment.id, start_time=segment.start_time, end_time=segment.end_time,
-                                           title=segment.title, channel=user.id, schedule=week_schedule[0].id)
+            schedule = await get_schedule(user)
+            if schedule:
+                for segment in schedule.segments:
+                    segment_id = json.loads(base64.b64decode(segment.id))
+                    calendar_year = segment_id["isoYear"]
+                    calendar_week = segment_id["isoWeek"]
+                    week_schedule = Schedule.get_or_create(calendar_week=calendar_week, calendar_year=calendar_year)
+                    if segment.start_time < datetime.now().astimezone():
+                        continue
+                    if schedule_segment := ScheduleSegment.get_or_none(
+                            ScheduleSegment.id == segment.id):
+                        schedule_segment.update(start_time=segment.start_time, end_time=segment.end_time,
+                                                title=segment.title, schedule=week_schedule[0].id) \
+                            .where(ScheduleSegment.id == segment.id).execute()
+                    else:
+                        ScheduleSegment.create(id=segment.id, start_time=segment.start_time, end_time=segment.end_time,
+                                               title=segment.title, channel=user.id, schedule=week_schedule[0].id)
 
-            remove_cancelled_streams(user, schedule.segments)
-
-    async def cleanup_forecast(self, schedule_channel):
-        now = datetime.now()
-        calendar = now.isocalendar()
-
-        for schedule in Schedule.select().where(Schedule.calendar_week <= calendar.week - 1):
-            try:
-                message = await schedule_channel.fetch_message(schedule.message_id)
-                await message.delete()
-            except:
-                pass
-            schedule.delete_instance(recursive=True)
+                remove_cancelled_streams(user, schedule.segments)
 
 
 async def setup(bot: commands.Bot) -> None:
