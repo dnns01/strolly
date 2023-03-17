@@ -32,6 +32,9 @@ def remove_cancelled_streams(user, segments):
             ScheduleSegment.start_time > datetime.now()):
         if schedule_segment.id not in segments_dict:
             schedule_segment.delete_instance()
+        elif segment := segments_dict.get(schedule_segment.id):
+            if segment.canceled_until:
+                schedule_segment.delete_instance()
 
 
 async def get_schedule(user):
