@@ -16,12 +16,8 @@ def get_calendar_week():
     now = datetime.now()
     calendar = now.isocalendar()
 
-    if calendar.weekday < 7 or now.hour < 12:
-        start_day = now - timedelta(days=calendar.weekday - 1)
-        return calendar.week, datetime(year=start_day.year, month=start_day.month, day=start_day.day)
-
-    start_day = now + timedelta(days=1)
-    return start_day.isocalendar().week, datetime(year=start_day.year, month=start_day.month, day=start_day.day)
+    start_day = now - timedelta(days=calendar.weekday - 1)
+    return calendar.week, datetime(year=start_day.year, month=start_day.month, day=start_day.day)
 
 
 def get_weekday(curr_day):
